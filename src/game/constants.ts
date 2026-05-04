@@ -1,8 +1,14 @@
 /** Đường kính vòng so với cạnh board — cố định mọi n (placement + hiển thị). */
 export const CIRCLE_FRACTION = 0.1
 
-/** Số Points tối đa (input). */
+/** Số Points tối đa (logic / backend tương lai — canvas, v.v.). */
 export const POINTS_MAX = 5000
+
+/** Giới hạn số vòng khi chỉ render DOM; tăng khi có canvas/virtual. */
+export const POINTS_MAX_DOM = 500
+
+/** Người chơi chọn được tối đa trong UI (clamp parsePoints). */
+export const POINTS_INPUT_MAX = Math.min(POINTS_MAX, POINTS_MAX_DOM)
 
 /** Từ số lượng này trở lên: vị trí ngẫu nhiên, cho phép chồng (dense). */
 export const OVERLAP_LAYOUT_MIN_COUNT = 48

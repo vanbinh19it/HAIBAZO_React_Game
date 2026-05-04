@@ -7,11 +7,14 @@ export {
   FADE_OUT_MS,
   OVERLAP_LAYOUT_MIN_COUNT,
   PLACE_GAP,
+  POINTS_INPUT_MAX,
   POINTS_MAX,
+  POINTS_MAX_DOM,
 } from './constants'
 export {
   generateCirclePositions,
   generateNonOverlappingPositions,
   parsePoints,
 } from './positions'
+export { createInitialPhases } from './roundUtils'
 export type { CircleItem, CirclePhase, GameRoundOutcome } from './types'

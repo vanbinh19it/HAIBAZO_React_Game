@@ -2,14 +2,15 @@ import {
   CIRCLE_FRACTION,
   OVERLAP_LAYOUT_MIN_COUNT,
   PLACE_GAP,
-  POINTS_MAX,
+  POINTS_INPUT_MAX,
 } from './constants'
 import type { CircleItem } from './types'
 
 export function parsePoints(raw: string): number {
   const n = Number.parseInt(raw, 10)
   if (!Number.isFinite(n) || n < 1) return 1
-  return Math.min(n, POINTS_MAX)
+  // DOM: POINTS_INPUT_MAX; khi không còn trần DOM có thể raise tới POINTS_MAX.
+  return Math.min(n, POINTS_INPUT_MAX)
 }
 
 function generateUniformRandomPositions(

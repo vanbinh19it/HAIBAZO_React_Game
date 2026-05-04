@@ -1,4 +1,4 @@
-import { POINTS_MAX } from '../../game/constants'
+import { POINTS_INPUT_MAX } from '../../game/constants'
 
 type PointsFieldProps = {
   value: string
@@ -12,7 +12,7 @@ export function PointsField({
   value,
   onChange,
   disabled = false,
-  max = POINTS_MAX,
+  max = POINTS_INPUT_MAX,
   id = 'game-points',
 }: PointsFieldProps) {
   return (

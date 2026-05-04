@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react'
 import {
   CLICK_DISPLAY_MS,
   CIRCLE_FRACTION,
@@ -15,6 +21,11 @@ type BoardCircleProps = {
   phase?: CirclePhase
   /** `Date.now()` tại lúc click đúng — đếm ngược 3.0→0.0 theo wall-clock. */
   highlightStartedAtMs?: number
+  /**
+   * Callback ổn định từ parent (cùng tham chiếu) — memo hiệu quả hơn so với onClick không param.
+   */
+  onCircleClick?: (value: number) => void
+  /** Legacy; chỉ gọi nếu không có `onCircleClick`. */
   onClick?: () => void
   /** Cho phép click (tắt khi GAME OVER hoặc không phải lượt). */
   interactive?: boolean
@@ -23,11 +34,12 @@ type BoardCircleProps = {
   className?: string
 }
 
-export function BoardCircle({
+function BoardCircleInner({
   item,
   phase = 'active',
   highlightStartedAtMs,
-  onClick,
+  onCircleClick,
+  onClick: onClickLegacy,
   interactive = true,
   freezeVisual = false,
   className = '',
@@ -126,10 +138,15 @@ export function BoardCircle({
         ? 1
         : 0
 
+  const handleButtonClick = useCallback(() => {
+    if (onCircleClick) onCircleClick(value)
+    else onClickLegacy?.()
+  }, [onCircleClick, onClickLegacy, value])
+
   return (
     <button
       type="button"
-      onClick={canClick ? onClick : undefined}
+      onClick={canClick ? handleButtonClick : undefined}
       className={`absolute flex aspect-square -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border py-0.5 font-medium text-black outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 ${palette} ${opacityClass} ${useFadeMotion ? 'ease-in-out' : ''} ${canClick ? 'cursor-pointer hover:brightness-95' : 'pointer-events-none cursor-default'} ${className}`.trim()}
       style={{
         left: `${cx * 100}%`,
@@ -154,3 +171,6 @@ export function BoardCircle({
     </button>
   )
 }
+
+export const BoardCircle = memo(BoardCircleInner)
+BoardCircle.displayName = 'BoardCircle'
