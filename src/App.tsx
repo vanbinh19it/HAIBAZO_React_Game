@@ -20,6 +20,7 @@ import {
   type CirclePhase,
   type GameRoundOutcome,
 } from './game'
+import { ResetGame } from './components/game/ResetGame'
 
 function createInitialPhases(items: CircleItem[]): Record<number, CirclePhase> {
   const map: Record<number, CirclePhase> = {}
@@ -156,6 +157,24 @@ function App() {
     setPlaying(true)
   }
 
+  const handleResetGame = () => {
+    clearSchedulers()
+    clearAutoPlaySchedulers()
+    autoPlayActiveRef.current = false
+
+    setPoints('5')
+    setPlaying(false)
+    setAutoPlay(false)
+    setCircles([])
+    setCirclePhase({})
+    setHighlightStartedAtMsByCircle({})
+    setNextExpected(1)
+    nextExpectedRef.current = 1
+    setRoundOutcome(null)
+    startTimeRef.current = null
+    setDisplayTime(0)
+  }
+
   /**
    * Đúng: highlight + lịch fade/remove.
    * Sai thứ tự: LOST, hủy mọi timeout (giữ phase success/fading hiện tại), tắt Auto Play, khóa board.
@@ -242,6 +261,8 @@ function App() {
           })
         }}
       />
+
+      <ResetGame onReset={handleResetGame} />
 
       <GameBoard
         circles={visibleCircles}
