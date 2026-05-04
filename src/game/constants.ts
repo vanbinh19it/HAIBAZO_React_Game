@@ -1,5 +1,11 @@
-/** Đường kính vòng so với cạnh board (logic placement). */
-export const CIRCLE_FRACTION = 0.14
+/** Đường kính vòng so với cạnh board — cố định mọi n (placement + hiển thị). */
+export const CIRCLE_FRACTION = 0.1
+
+/** Số Points tối đa (input). */
+export const POINTS_MAX = 5000
+
+/** Từ số lượng này trở lên: vị trí ngẫu nhiên, cho phép chồng (dense). */
+export const OVERLAP_LAYOUT_MIN_COUNT = 48
 
 /** Khoảng cách tối thiểu giữa các tâm (so với đường kính). */
 export const PLACE_GAP = 0.012

@@ -5,7 +5,13 @@ export {
   CIRCLE_LIFECYCLE_MS,
   CLICK_DISPLAY_MS,
   FADE_OUT_MS,
+  OVERLAP_LAYOUT_MIN_COUNT,
   PLACE_GAP,
+  POINTS_MAX,
 } from './constants'
-export { generateNonOverlappingPositions, parsePoints } from './positions'
+export {
+  generateCirclePositions,
+  generateNonOverlappingPositions,
+  parsePoints,
+} from './positions'
 export type { CircleItem, CirclePhase, GameRoundOutcome } from './types'

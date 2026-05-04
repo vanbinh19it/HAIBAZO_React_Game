@@ -3,6 +3,8 @@ export type CircleItem = {
   value: number
   cx: number
   cy: number
+  /** Đường kính so với cạnh board (0–1); mặc định theo layout khi sinh. */
+  diameter?: number
 }
 
 /** Trạng thái hiển thị / tương tác một vòng trên board (Bước 3). */

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import {
   CLICK_DISPLAY_MS,
+  CIRCLE_FRACTION,
   CIRCLE_LIFECYCLE_MS,
   FADE_OUT_MS,
 } from '../../game/constants'
@@ -32,6 +33,10 @@ export function BoardCircle({
   className = '',
 }: BoardCircleProps) {
   const { cx, cy, value } = item
+  const d = item.diameter ?? CIRCLE_FRACTION
+  const sizePct = d * 100
+  const mainFontPx = Math.max(6, Math.min(20, Math.round(d * 130)))
+  const subFontPx = Math.max(5, Math.round(mainFontPx * 0.55))
 
   const [, setTick] = useState(0)
   const [frozenRemainingSec, setFrozenRemainingSec] = useState<number | null>(
@@ -113,20 +118,35 @@ export function BoardCircle({
 
   const canClick = interactive && phase === 'active'
 
+  /** Giai đoạn cam + đếm (CLICK_DISPLAY) và fade: luôn nổi trên các vòng active chồng nhau. */
+  const stackZ =
+    phase === 'success' || phase === 'fading'
+      ? 100 + value
+      : phase === 'active'
+        ? 1
+        : 0
+
   return (
     <button
       type="button"
       onClick={canClick ? onClick : undefined}
-      className={`absolute flex aspect-square w-[14%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border py-1 text-lg font-medium text-black outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 ${palette} ${opacityClass} ${useFadeMotion ? 'ease-in-out' : ''} ${canClick ? 'cursor-pointer hover:brightness-95' : 'pointer-events-none cursor-default'} ${className}`.trim()}
+      className={`absolute flex aspect-square -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border py-0.5 font-medium text-black outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 ${palette} ${opacityClass} ${useFadeMotion ? 'ease-in-out' : ''} ${canClick ? 'cursor-pointer hover:brightness-95' : 'pointer-events-none cursor-default'} ${className}`.trim()}
       style={{
         left: `${cx * 100}%`,
         top: `${cy * 100}%`,
+        width: `${sizePct}%`,
+        zIndex: stackZ,
         transitionDuration: useFadeMotion ? `${FADE_OUT_MS}ms` : undefined,
       }}
     >
-      <span className="leading-none">{value}</span>
+      <span className="leading-none tabular-nums" style={{ fontSize: `${mainFontPx}px` }}>
+        {value}
+      </span>
       {showLiveDuration && (
-        <span className="mt-0.5 text-[0.65rem] leading-none tabular-nums text-white">
+        <span
+          className="mt-0.5 leading-none tabular-nums text-white"
+          style={{ fontSize: `${subFontPx}px` }}
+        >
           {displayRemainingSec.toFixed(1)}
           s
         </span>

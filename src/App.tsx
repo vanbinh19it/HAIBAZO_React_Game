@@ -14,7 +14,7 @@ import {
   AUTO_PLAY_DELAY_MIN_MS,
   CLICK_DISPLAY_MS,
   FADE_OUT_MS,
-  generateNonOverlappingPositions,
+  generateCirclePositions,
   parsePoints,
   type CircleItem,
   type CirclePhase,
@@ -142,7 +142,7 @@ function App() {
     clearSchedulers()
     clearAutoPlaySchedulers()
     const n = parsePoints(points)
-    const items = generateNonOverlappingPositions(n)
+    const items = generateCirclePositions(n)
     const phases = createInitialPhases(items)
 
     setCircles(items)
