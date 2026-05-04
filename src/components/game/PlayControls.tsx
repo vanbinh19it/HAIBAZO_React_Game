@@ -1,7 +1,7 @@
 type PlayControlsProps = {
   playing: boolean
-  /** Khi đã xóa hết đúng thứ tự: chỉ hiện Restart (Bước 4). */
-  allCleared?: boolean
+  /** GAME OVER hoặc ALL CLEARED: chỉ nút Restart. */
+  onlyRestart?: boolean
   autoPlay: boolean
   onPlay: () => void
   onRestart: () => void
@@ -13,7 +13,7 @@ const btnClass =
 
 export function PlayControls({
   playing,
-  allCleared = false,
+  onlyRestart = false,
   autoPlay,
   onPlay,
   onRestart,
@@ -27,7 +27,7 @@ export function PlayControls({
     )
   }
 
-  if (allCleared) {
+  if (onlyRestart) {
     return (
       <button type="button" onClick={onRestart} className={btnClass}>
         Restart

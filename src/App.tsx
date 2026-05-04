@@ -18,6 +18,7 @@ import {
   parsePoints,
   type CircleItem,
   type CirclePhase,
+  type GameRoundOutcome,
 } from './game'
 
 function createInitialPhases(items: CircleItem[]): Record<number, CirclePhase> {
@@ -36,20 +37,21 @@ function App() {
   const [circlePhase, setCirclePhase] = useState<
     Record<number, CirclePhase>
   >({})
-  /** Mốc `Date.now()` khi click đúng từng vòng — để đếm real-time trên BoardCircle. */
   const [highlightStartedAtMsByCircle, setHighlightStartedAtMsByCircle] =
     useState<Record<number, number>>({})
   const [nextExpected, setNextExpected] = useState(1)
-  const [gameOver, setGameOver] = useState(false)
+  const [roundOutcome, setRoundOutcome] = useState<GameRoundOutcome>(null)
 
   const [displayTime, setDisplayTime] = useState(0)
   const startTimeRef = useRef<number | null>(null)
   const nextExpectedRef = useRef(1)
   const circlePhaseRef = useRef<Record<number, CirclePhase>>({})
   const timeoutIdsRef = useRef<number[]>([])
-  const handleCircleClickRef = useRef<(value: number) => void>(() => {})
+  const handleCircleClickRef = useRef<(targetNumber: number) => void>(() => {})
 
   circlePhaseRef.current = circlePhase
+
+  const isLost = roundOutcome === 'LOST'
 
   const clearSchedulers = () => {
     timeoutIdsRef.current.forEach((id) => window.clearTimeout(id))
@@ -65,13 +67,13 @@ function App() {
   const totalCount = circles.length
   const allCleared =
     playing &&
-    !gameOver &&
+    !isLost &&
     totalCount > 0 &&
     circles.every((c) => circlePhase[c.value] === 'removed')
 
   const showNext =
     playing &&
-    !gameOver &&
+    !isLost &&
     !allCleared &&
     totalCount > 0 &&
     nextExpected <= totalCount
@@ -85,7 +87,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!playing || startTimeRef.current === null || gameOver || allCleared) return
+    if (!playing || startTimeRef.current === null || isLost || allCleared) return
 
     const tick = () => {
       setDisplayTime((Date.now() - startTimeRef.current!) / 1000)
@@ -94,10 +96,10 @@ function App() {
     tick()
     const id = window.setInterval(tick, 100)
     return () => window.clearInterval(id)
-  }, [playing, gameOver, allCleared])
+  }, [playing, isLost, allCleared])
 
   useEffect(() => {
-    if (!autoPlay || !playing || gameOver || allCleared) return
+    if (!autoPlay || !playing || isLost || allCleared) return
 
     const total = circles.length
     if (total === 0) return
@@ -117,7 +119,7 @@ function App() {
       window.clearTimeout(id)
       timeoutIdsRef.current = timeoutIdsRef.current.filter((x) => x !== id)
     }
-  }, [autoPlay, playing, gameOver, allCleared, nextExpected, circles.length])
+  }, [autoPlay, playing, isLost, allCleared, nextExpected, circles.length])
 
   const startRound = () => {
     clearSchedulers()
@@ -130,49 +132,63 @@ function App() {
     setHighlightStartedAtMsByCircle({})
     setNextExpected(1)
     nextExpectedRef.current = 1
-    setGameOver(false)
+    setRoundOutcome(null)
     startTimeRef.current = Date.now()
     setDisplayTime(0)
     setPlaying(true)
   }
 
-  const handleCircleClick = (value: number) => {
-    if (gameOver || allCleared) return
-    if (circlePhaseRef.current[value] !== 'active') return
+  /**
+   * Đúng: highlight + lịch fade/remove.
+   * Sai thứ tự: LOST, hủy mọi timeout (giữ phase success/fading hiện tại), tắt Auto Play, khóa board.
+   */
+  const handleCircleClick = (targetNumber: number) => {
+    if (isLost || allCleared) return
 
-    if (value !== nextExpectedRef.current) {
-      setGameOver(true)
+    if (circlePhaseRef.current[targetNumber] !== 'active') return
+
+    if (targetNumber !== nextExpectedRef.current) {
+      clearSchedulers()
+      setAutoPlay(false)
+      setRoundOutcome('LOST')
+
+      const now = Date.now()
+      setHighlightStartedAtMsByCircle((prev) => ({
+        ...prev,
+        [targetNumber]: now,
+      }))
+      setCirclePhase((p) => ({ ...p, [targetNumber]: 'success' }))
       return
     }
 
     const now = Date.now()
-    setHighlightStartedAtMsByCircle((prev) => ({ ...prev, [value]: now }))
+    setHighlightStartedAtMsByCircle((prev) => ({ ...prev, [targetNumber]: now }))
     setNextExpected((n) => {
       const next = n + 1
       nextExpectedRef.current = next
       return next
     })
-    setCirclePhase((p) => ({ ...p, [value]: 'success' }))
+    setCirclePhase((p) => ({ ...p, [targetNumber]: 'success' }))
 
     scheduleAfter(CLICK_DISPLAY_MS, () => {
       setCirclePhase((p) =>
-        p[value] === 'success' ? { ...p, [value]: 'fading' } : p,
+        p[targetNumber] === 'success' ? { ...p, [targetNumber]: 'fading' } : p,
       )
       scheduleAfter(FADE_OUT_MS, () => {
-        setCirclePhase((p) => ({ ...p, [value]: 'removed' }))
+        setCirclePhase((p) => ({ ...p, [targetNumber]: 'removed' }))
       })
     })
   }
 
   handleCircleClickRef.current = handleCircleClick
 
-  const titleText = gameOver
+  const titleText = isLost
     ? 'GAME OVER'
     : allCleared
       ? 'ALL CLEARED'
       : "LET'S PLAY"
 
-  const titleClassName = gameOver
+  const titleClassName = isLost
     ? 'text-red-600'
     : allCleared
       ? 'text-green-600'
@@ -192,7 +208,7 @@ function App() {
 
       <PlayControls
         playing={playing}
-        allCleared={allCleared}
+        onlyRestart={allCleared || isLost}
         autoPlay={autoPlay}
         onPlay={startRound}
         onRestart={startRound}
@@ -206,7 +222,8 @@ function App() {
             item={item}
             phase={circlePhase[item.value] ?? 'active'}
             highlightStartedAtMs={highlightStartedAtMsByCircle[item.value]}
-            interactive={!gameOver && !allCleared}
+            interactive={!isLost && !allCleared}
+            freezeVisual={isLost}
             onClick={() => handleCircleClick(item.value)}
           />
         )}

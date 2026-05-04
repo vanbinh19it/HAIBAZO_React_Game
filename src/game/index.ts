@@ -8,4 +8,4 @@ export {
   PLACE_GAP,
 } from './constants'
 export { generateNonOverlappingPositions, parsePoints } from './positions'
-export type { CircleItem, CirclePhase } from './types'
+export type { CircleItem, CirclePhase, GameRoundOutcome } from './types'

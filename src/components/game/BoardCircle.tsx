@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import {
+  CLICK_DISPLAY_MS,
   CIRCLE_LIFECYCLE_MS,
   FADE_OUT_MS,
 } from '../../game/constants'
@@ -16,6 +17,8 @@ type BoardCircleProps = {
   onClick?: () => void
   /** Cho phép click (tắt khi GAME OVER hoặc không phải lượt). */
   interactive?: boolean
+  /** GAME OVER: dừng đếm ngược & giữ opacity/số tại thời điểm khóa. */
+  freezeVisual?: boolean
   className?: string
 }
 
@@ -25,14 +28,40 @@ export function BoardCircle({
   highlightStartedAtMs,
   onClick,
   interactive = true,
+  freezeVisual = false,
   className = '',
 }: BoardCircleProps) {
   const { cx, cy, value } = item
 
-  /** Chỉ để ép re-render ~20fps; giá trị hiển thị lấy từ đồng hồ thật mỗi lần paint. */
   const [, setTick] = useState(0)
+  const [frozenRemainingSec, setFrozenRemainingSec] = useState<number | null>(
+    null,
+  )
+
+  const totalSec = CIRCLE_LIFECYCLE_MS / 1000
+
+  const showLiveDuration =
+    (phase === 'success' || phase === 'fading') &&
+    highlightStartedAtMs != null
+
+  useLayoutEffect(() => {
+    if (!freezeVisual) {
+      setFrozenRemainingSec(null)
+      return
+    }
+    if (!showLiveDuration || highlightStartedAtMs == null) return
+
+    setFrozenRemainingSec((prev) => {
+      if (prev !== null) return prev
+      return Math.max(
+        0,
+        totalSec - (Date.now() - highlightStartedAtMs) / 1000,
+      )
+    })
+  }, [freezeVisual, showLiveDuration, highlightStartedAtMs, totalSec])
 
   useEffect(() => {
+    if (freezeVisual) return
     if (
       highlightStartedAtMs == null ||
       phase === 'active' ||
@@ -45,13 +74,8 @@ export function BoardCircle({
       setTick((t) => t + 1)
     }, 50)
     return () => window.clearInterval(id)
-  }, [highlightStartedAtMs, phase])
+  }, [freezeVisual, highlightStartedAtMs, phase])
 
-  const showLiveDuration =
-    (phase === 'success' || phase === 'fading') &&
-    highlightStartedAtMs != null
-
-  const totalSec = CIRCLE_LIFECYCLE_MS / 1000
   const remainingSec =
     showLiveDuration && highlightStartedAtMs != null
       ? Math.max(
@@ -60,15 +84,32 @@ export function BoardCircle({
         )
       : 0
 
+  const displayRemainingSec =
+    freezeVisual && frozenRemainingSec !== null
+      ? frozenRemainingSec
+      : remainingSec
+
   const palette =
     phase === 'active'
       ? 'border-red-300 bg-white'
       : 'border-orange-600 bg-orange-500'
 
-  const opacityClass =
-    phase === 'fading' ? 'opacity-0' : 'opacity-100'
+  const freezeDimBelowSec = CLICK_DISPLAY_MS / 1000
 
-  const useFadeMotion = phase === 'success' || phase === 'fading'
+  /**
+   * Đang fading thì mờ cả nút. Khi GAME OVER (freeze): vẫn thấy đếm; còn < 1.5s
+   * (nửa sau chu kỳ, đồng bộ CLICK_DISPLAY_MS) thì opacity-50, trước đó opacity-100.
+   */
+  const opacityClass = freezeVisual
+    ? displayRemainingSec < freezeDimBelowSec
+      ? 'opacity-50'
+      : 'opacity-100'
+    : phase === 'fading'
+      ? 'opacity-0'
+      : 'opacity-100'
+
+  const useFadeMotion =
+    !freezeVisual && (phase === 'success' || phase === 'fading')
 
   const canClick = interactive && phase === 'active'
 
@@ -85,8 +126,8 @@ export function BoardCircle({
     >
       <span className="leading-none">{value}</span>
       {showLiveDuration && (
-        <span className="mt-0.5 text-[0.65rem] leading-none tabular-nums">
-          {remainingSec.toFixed(1)}
+        <span className="mt-0.5 text-[0.65rem] leading-none tabular-nums text-white">
+          {displayRemainingSec.toFixed(1)}
           s
         </span>
       )}

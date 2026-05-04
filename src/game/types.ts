@@ -7,3 +7,6 @@ export type CircleItem = {
 
 /** Trạng thái hiển thị / tương tác một vòng trên board (Bước 3). */
 export type CirclePhase = 'active' | 'success' | 'fading' | 'removed'
+
+/** Kết quả vòng chơi — `LOST` khi click sai thứ tự. */
+export type GameRoundOutcome = 'LOST' | null
