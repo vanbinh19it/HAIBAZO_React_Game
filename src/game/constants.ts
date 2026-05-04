@@ -14,5 +14,5 @@ export const CLICK_DISPLAY_MS = 1500
 export const FADE_OUT_MS = CIRCLE_LIFECYCLE_MS - CLICK_DISPLAY_MS
 
 /** Auto Play: trễ ngẫu nhiên giữa mỗi lần mô phỏng click (ms). */
-export const AUTO_PLAY_DELAY_MIN_MS = 300
-export const AUTO_PLAY_DELAY_MAX_MS = 900
+export const AUTO_PLAY_DELAY_MIN_MS = 500
+export const AUTO_PLAY_DELAY_MAX_MS = 1000

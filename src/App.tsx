@@ -46,12 +46,22 @@ function App() {
   const startTimeRef = useRef<number | null>(null)
   const nextExpectedRef = useRef(1)
   const circlePhaseRef = useRef<Record<number, CirclePhase>>({})
+  /** Timeout fade/remove sau click đúng — không trộn với Auto Play. */
   const timeoutIdsRef = useRef<number[]>([])
+  /** Chỉ lịch click tự động; tách để OFF không hủy animation vòng đã bấm. */
+  const autoPlayTimeoutIdsRef = useRef<number[]>([])
+  const autoPlayActiveRef = useRef(false)
   const handleCircleClickRef = useRef<(targetNumber: number) => void>(() => {})
 
   circlePhaseRef.current = circlePhase
+  autoPlayActiveRef.current = autoPlay
 
   const isLost = roundOutcome === 'LOST'
+
+  const clearAutoPlaySchedulers = () => {
+    autoPlayTimeoutIdsRef.current.forEach((id) => window.clearTimeout(id))
+    autoPlayTimeoutIdsRef.current = []
+  }
 
   const clearSchedulers = () => {
     timeoutIdsRef.current.forEach((id) => window.clearTimeout(id))
@@ -83,7 +93,10 @@ function App() {
   }, [nextExpected])
 
   useEffect(() => {
-    return () => clearSchedulers()
+    return () => {
+      clearSchedulers()
+      clearAutoPlaySchedulers()
+    }
   }, [])
 
   useEffect(() => {
@@ -111,18 +124,23 @@ function App() {
     const delay = AUTO_PLAY_DELAY_MIN_MS + Math.random() * span
 
     const id = window.setTimeout(() => {
+      if (!autoPlayActiveRef.current) return
       handleCircleClickRef.current(valueToClick)
     }, delay)
-    timeoutIdsRef.current.push(id)
+
+    autoPlayTimeoutIdsRef.current.push(id)
 
     return () => {
       window.clearTimeout(id)
-      timeoutIdsRef.current = timeoutIdsRef.current.filter((x) => x !== id)
+      autoPlayTimeoutIdsRef.current = autoPlayTimeoutIdsRef.current.filter(
+        (x) => x !== id,
+      )
     }
   }, [autoPlay, playing, isLost, allCleared, nextExpected, circles.length])
 
   const startRound = () => {
     clearSchedulers()
+    clearAutoPlaySchedulers()
     const n = parsePoints(points)
     const items = generateNonOverlappingPositions(n)
     const phases = createInitialPhases(items)
@@ -149,6 +167,7 @@ function App() {
 
     if (targetNumber !== nextExpectedRef.current) {
       clearSchedulers()
+      clearAutoPlaySchedulers()
       setAutoPlay(false)
       setRoundOutcome('LOST')
 
@@ -212,7 +231,16 @@ function App() {
         autoPlay={autoPlay}
         onPlay={startRound}
         onRestart={startRound}
-        onToggleAutoPlay={() => setAutoPlay((v) => !v)}
+        onToggleAutoPlay={() => {
+          setAutoPlay((prev) => {
+            if (prev) {
+              clearAutoPlaySchedulers()
+              autoPlayActiveRef.current = false
+              return false
+            }
+            return true
+          })
+        }}
       />
 
       <GameBoard

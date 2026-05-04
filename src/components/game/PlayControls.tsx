@@ -41,7 +41,7 @@ export function PlayControls({
         Restart
       </button>
       <button type="button" onClick={onToggleAutoPlay} className={btnClass}>
-        {autoPlay ? 'Auto Play ON' : 'Auto Play OFF'}
+        {autoPlay ? 'Auto Play OFF' : 'Auto Play ON'}
       </button>
     </div>
   )
